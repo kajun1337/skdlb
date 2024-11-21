@@ -256,6 +256,14 @@ sub delete_le_certificate    # ( $cert_filename )
 	}
 
 
+	# check Email config
+	my $le_conf = &getLetsencryptConfig();
+	if ( !$le_conf->{ email } )
+	{
+		my $msg = "LetsencryptZ email is not configured.";
+		&httpErrorResponse( code => 400, desc => $desc, msg => $msg );
+	}
+
 	# revoke LE cert
 	my $error = &runLetsencryptDestroy( $le_cert_name );
 	if ( $error )

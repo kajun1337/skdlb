@@ -1042,7 +1042,7 @@ sub checkCertPEMKeyEncrypted    # ( $cert_path )
 			{
 				&zenlog( "Error checking Private Key Encrypted in '$cert_path': " . $strerr[4],
 						 "debug", "LSLB" );
-				$rc = -1;
+				$rc = 1;
 			}
 		}
 		Net::SSLeay::BIO_free( $bio_key );

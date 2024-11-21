@@ -150,7 +150,7 @@ sub applyRoutingCmd
 	# Get params
 	my $routeparams = &getGlobalConfiguration( 'routeparams' );
 	use NetAddr::IP;
-	my $ip_local  = new NetAddr::IP( $$if_ref{ addr }, $$if_ref{ mask } );
+	my $ip_local = new NetAddr::IP( $$if_ref{ addr }, $$if_ref{ mask } );
 	my $net_local = $ip_local->network();
 
 	&zenlog( "addlocalnet: $action route for $$if_ref{name} in table $table",
@@ -192,7 +192,7 @@ sub addlocalnet    # ($if_ref)
 
 	# Get network
 	use NetAddr::IP;
-	my $ip_local  = new NetAddr::IP( $$if_ref{ addr }, $$if_ref{ mask } );
+	my $ip_local = new NetAddr::IP( $$if_ref{ addr }, $$if_ref{ mask } );
 	my $net_local = $ip_local->network();
 
 	# Add or replace local net to all tables
@@ -309,10 +309,10 @@ sub dellocalnet    # ($if_ref)
 
 		# Get network
 		use NetAddr::IP;
-		my $ip  = new NetAddr::IP( $$if_ref{ addr }, $$if_ref{ mask } );
+		my $ip = new NetAddr::IP( $$if_ref{ addr }, $$if_ref{ mask } );
 		my $net = $ip->network();
 
-		my @links      = ( 'main', &getLinkNameList() );
+		my @links = ( 'main', &getLinkNameList() );
 		my @rtables_id = &listRoutingTablesNames();
 
 		foreach my $link ( @links )
@@ -356,7 +356,7 @@ sub isRoute
 			 "debug", "PROFILING" );
 
 	my $route = shift;
-	my $ipv   = shift // '';
+	my $ipv = shift // '';
 
 	$ipv = "-$ipv" if ( $ipv ne '' );
 	my $exist = 1;
@@ -563,7 +563,7 @@ sub applyRule
 		$rule->{ priority } = &genRoutingRulesPrio( $rule->{ type } );
 	}
 
-	my $cmd    = &buildRuleCmd( $action, $rule );
+	my $cmd = &buildRuleCmd( $action, $rule );
 	my $output = &logAndRun( "$cmd" );
 
 	return $output;
@@ -894,8 +894,8 @@ sub applyRoutes    # ($table,$if_ref,$gateway)
 
 		my $rule = &getRuleFromIface( $if_ref );
 		$rule->{ table } = "table_$toif";
-		$status          = &setRule( "add", $rule );
-		$if_announce     = $toif;
+		$status = &setRule( "add", $rule );
+		$if_announce = $toif;
 	}
 
 
@@ -1030,16 +1030,16 @@ sub getDefaultGW    # ($if)
 
 		close $rt_fd;
 		@defgw = grep ( /^default/, @routes );
-		@line  = split ( / /, $defgw[0] );
-		$gw    = $line[2];
+		@line = split ( / /, $defgw[0] );
+		$gw = $line[2];
 		return $gw;
 	}
 	else
 	{
 		@routes = @{ &logAndGet( "$ip_bin route list", "array" ) };
-		@defgw  = grep ( /^default/, @routes );
-		@line   = split ( / /, $defgw[0] );
-		$gw     = $line[2];
+		@defgw = grep ( /^default/, @routes );
+		@line = split ( / /, $defgw[0] );
+		$gw = $line[2];
 		return $gw;
 	}
 }
@@ -1127,8 +1127,8 @@ sub getIfDefaultGW    # ()
 	&zenlog( __FILE__ . ":" . __LINE__ . ":" . ( caller ( 0 ) )[3] . "( @_ )",
 			 "debug", "PROFILING" );
 	my @routes = @{ &logAndGet( "$ip_bin route list", "array" ) };
-	my @defgw  = grep ( /^default/, @routes );
-	my @line   = split ( / /, $defgw[0] );
+	my @defgw = grep ( /^default/, @routes );
+	my @line = split ( / /, $defgw[0] );
 
 	return $line[4];
 }
@@ -1199,7 +1199,7 @@ sub listRoutingTablesNames
 
 	my $rttables = &getGlobalConfiguration( 'rttables' );
 
-	my @list       = ();
+	my @list = ();
 	my @exceptions = ( 'local', 'default', 'unspec' );
 
 	require Skudonet::Lock;
@@ -1276,14 +1276,14 @@ sub listRoutingRulesSys
 			delete $r->{ src };
 			delete $r->{ srclen };
 
-			$r->{ to } = $r->{ dst }        if exists ( $r->{ dst } );
+			$r->{ to } = $r->{ dst } if exists ( $r->{ dst } );
 			$r->{ to } .= "/$r->{ dstlen }" if exists ( $r->{ dstlen } );
 
 			delete $r->{ dst };
 			delete $r->{ dstlen };
 
 			$r->{ type } = $type;
-			$r->{ not }  = 'true' if ( exists $r->{ not } );
+			$r->{ not } = 'true' if ( exists $r->{ not } );
 			push @rules, $r;
 		}
 	}
@@ -1339,6 +1339,7 @@ sub getRoutingTableExists
 
 	my $table = shift;
 	my $rc    = 1;
+	return $rc if $table eq "main";
 
 	if ( grep ( /^$table$/, &listRoutingTablesNames() ) )
 	{
@@ -1413,7 +1414,7 @@ sub getRoutingOutgoing    # ( $ip, $mark )
 
 		if ( $iface eq "lo" )
 		{
-			my $cmd  = "$ip_bin -o -d route list table $table type local";
+			my $cmd = "$ip_bin -o -d route list table $table type local";
 			my $data = &logAndGet( $cmd, "array" );
 			foreach my $route_local ( @{ $data } )
 			{

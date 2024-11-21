@@ -63,12 +63,16 @@ sub set_snmp
 	# check scope value
 	if ( defined $json_obj->{ 'scope' } )
 	{
-		my $network = new NetAddr::IP( $json_obj->{ 'scope' } )->network();
-		if ( $network ne $json_obj->{ 'scope' } )
+		my @scope_ref = split ( /\s+/, $json_obj->{ 'scope' } );
+		foreach my $scope ( @scope_ref )
 		{
-			my $msg =
-			  "The value '$json_obj->{ 'scope' }' is not a valid network value for the parameter 'scope'.";
-			&httpErrorResponse( code => 400, desc => $desc, msg => $msg );
+			my $network = new NetAddr::IP( $scope )->network();
+			if ( $network ne $scope )
+			{
+				my $msg =
+				  "The value '$scope' is not a valid network value for the parameter 'scope'.";
+				&httpErrorResponse( code => 400, desc => $desc, msg => $msg );
+			}
 		}
 	}
 
@@ -117,6 +121,7 @@ sub set_snmp
 
 	# wait to check pid values
 	sleep ( 1 );
+	$snmp = &getSnmpdConfig();
 	$snmp->{ status } = &getSnmpdStatus();
 
 	&httpResponse(

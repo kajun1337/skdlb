@@ -149,17 +149,27 @@ sub getSnmpdConfig    # ()
 	my $snmpdconfig_file = &getGlobalConfiguration( 'snmpdconfig_file' );
 
 	tie my @config_file, 'Tie::File', $snmpdconfig_file;
+	my $snmpd_config_end = "#zenlb";
 
 	## agentAddress line ##
 	# agentAddress udp:127.0.0.1:161
 	my ( undef, $snmpd_ip, $snmpd_port ) = split ( /:/, $config_file[0] );
-
-	## rocommunity line ##
-	# rocommunity public 0.0.0.0/0
-	my ( undef, $snmpd_community, $snmpd_scope ) =
-	  split ( /\s+/, $config_file[1] );
-
 	$snmpd_ip = '*' if ( $snmpd_ip eq '0.0.0.0' );
+
+	my $in_config = 1;
+	my $snmpd_scope;
+	my $snmpd_community;
+	foreach my $config_line ( @config_file )
+	{
+		$in_config = 0 if ( $config_line eq $snmpd_config_end );
+		last if not $in_config;
+		if ( $config_line =~ /^rocommunity (\w+) (.*)$/ )
+		{
+			$snmpd_community = $1;
+			$snmpd_scope .= " " if $snmpd_scope;
+			$snmpd_scope .= $2;
+		}
+	}
 
 	# Close file
 	untie @config_file;
@@ -195,16 +205,26 @@ sub setSnmpdConfig    # ($snmpd_conf)
 			 "debug", "PROFILING" );
 	my ( $snmpd_conf ) = @_;
 
-	my $snmpdconfig_file = &getGlobalConfiguration( 'snmpdconfig_file' );
+	return -1 if ref $snmpd_conf ne 'HASH';
 
 	my $ip = $snmpd_conf->{ ip };
 	$ip = '0.0.0.0' if ( $snmpd_conf->{ ip } eq '*' );
 
-	return -1 if ref $snmpd_conf ne 'HASH';
-
 	# scope has to be network range definition
-	my $network = new NetAddr::IP( $snmpd_conf->{ scope } )->network();
-	return -1 if ( $network ne $snmpd_conf->{ scope } );
+	my @scopes_ref = split ( /\s+/, $snmpd_conf->{ scope } );
+	foreach my $scope ( @scopes_ref )
+	{
+		my $network = new NetAddr::IP( $scope )->network();
+		return -1 if ( $network ne $scope );
+	}
+
+	my $snmpdconfig_file = &getGlobalConfiguration( 'snmpdconfig_file' );
+	my $snmpd_config_end = "#zenlb";
+
+	require Tie::File;
+	tie my @config_file_ref, 'Tie::File', $snmpdconfig_file;
+	my @config_ref = @config_file_ref;
+	untie @config_file_ref;
 
 	# Open config file
 	open my $config_file, '>', $snmpdconfig_file;
@@ -218,10 +238,23 @@ sub setSnmpdConfig    # ($snmpd_conf)
 	# example: agentAddress  udp:127.0.0.1:161
 	# example: rocommunity public  0.0.0.0/0
 	print $config_file "agentAddress udp:$ip:$snmpd_conf->{port}\n";
-	print $config_file
-	  "rocommunity $snmpd_conf->{community} $snmpd_conf->{scope}\n";
+	foreach my $scope ( @scopes_ref )
+	{
+		print $config_file "rocommunity $snmpd_conf->{community} $scope\n";
+	}
 	print $config_file "includeAllDisks 10%\n";
-	print $config_file "#zenlb\n";
+	print $config_file $snmpd_config_end . "\n";
+	my $in_config = 1;
+	foreach my $config_line ( @config_ref )
+	{
+		if ( $config_line eq $snmpd_config_end )
+		{
+			$in_config = 0;
+			next;
+		}
+		next if $in_config;
+		print $config_file $config_line . "\n";
+	}
 
 	# Close config file
 	close $config_file;
